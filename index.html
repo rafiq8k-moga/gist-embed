@@ -24,50 +24,56 @@
   </div>
 
   <script>
-    function getParam(name) {
-      const urlParams = new URLSearchParams(window.location.search);
-      return urlParams.get(name);
+  function getParam(name) {
+    const urlParams = new URLSearchParams(window.location.search);
+    return urlParams.get(name);
+  }
+
+  function base64Encode(str) {
+    return btoa(unescape(encodeURIComponent(str)));
+  }
+
+  function base64Decode(str) {
+    try {
+      return decodeURIComponent(escape(atob(str)));
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function generateEmbed() {
+    const url = document.getElementById('gist-url').value.trim();
+    const match = url.match(/^https:\/\/gist\.github\.com\/([^\/]+)\/([a-f0-9]+)$/i);
+
+    if (!match) {
+      alert("URL harus berupa format: https://gist.github.com/username/gistid");
+      return;
     }
 
-    function base64Decode(str) {
-      try {
-        return decodeURIComponent(escape(atob(str)));
-      } catch (e) {
-        return null;
-      }
-    }
+    const embedUrl = `${url}.js`;
+    const embedCode = `<script src="${embedUrl}"></script>`;
+    const encoded = base64Encode(embedCode);
+    const resultUrl = `${window.location.origin}${window.location.pathname}?gist=${encoded}`;
+    document.getElementById('output-url').value = resultUrl;
+  }
 
-    function base64Encode(str) {
-      return btoa(unescape(encodeURIComponent(str)));
-    }
+  (function init() {
+    const gistParam = getParam('gist');
 
-    function generateEmbed() {
-      const url = document.getElementById('gist-url').value.trim();
-      const match = url.match(/^https:\/\/gist\.github\.com\/([^\/]+)\/([a-f0-9]+)$/i);
-      if (!match) {
-        alert("URL harus berupa format: https://gist.github.com/username/gistid");
-        return;
-      }
-      const embedUrl = `${url}.js`;
-      const embedCode = `<script src="${embedUrl}"></script>`;
-      const encoded = base64Encode(embedCode);
-      const resultUrl = `${window.location.origin}${window.location.pathname}?gist=${encoded}`;
-      document.getElementById('output-url').value = resultUrl;
-    }
+    if (gistParam) {
+      const decoded = base64Decode(gistParam);
 
-    (function init() {
-      const gistParam = getParam('gist');
-      if (gistParam) {
-        const decoded = base64Decode(gistParam);
-        if (decoded) {
-          document.getElementById('embed-output').innerHTML = decoded;
-        } else {
-          document.getElementById('embed-output').innerHTML = "<p style='color:red;'>Gagal decode parameter gist.</p>";
-        }
+      if (decoded) {
+        document.getElementById('embed-output').innerHTML = decoded;
       } else {
-        document.getElementById('form-ui').style.display = 'block';
+        document.getElementById('embed-output').innerHTML = `
+          <p style="color:red;">Gagal decode parameter gist.</p>
+        `;
       }
-    })();
-  </script>
+    } else {
+      document.getElementById('form-ui').style.display = 'block';
+    }
+  })();
+</script>
 </body>
 </html>
