@@ -14,8 +14,8 @@
   <div id="app">
     <div id="form-ui" style="display:none;">
       <h2>Gist Embed Generator</h2>
-      <p>Masukkan link Gist JS kamu (contoh: <code>https://gist.github.com/username/gistid.js</code>)</p>
-      <input type="text" id="gist-url" placeholder="https://gist.github.com/username/gistid.js" />
+      <p>Masukkan URL Gist kamu (contoh: <code>https://gist.github.com/username/gistid</code>)</p>
+      <input type="text" id="gist-url" placeholder="https://gist.github.com/username/gistid" />
       <button onclick="generateEmbed()">Generate Embed URL</button>
       <textarea id="output-url" readonly placeholder="URL akan muncul di sini..."></textarea>
     </div>
@@ -43,11 +43,15 @@
 
     function generateEmbed() {
       const url = document.getElementById('gist-url').value.trim();
-      if (!url.startsWith("https://gist.github.com/") || !url.endsWith(".js")) {
-        alert("URL harus berupa file .js dari gist.github.com");
+      const match = url.match(/^https:\/\/gist\.github\.com\/([^\/]+)\/([a-f0-9]+)$/i);
+      if (!match) {
+        alert("URL harus berupa format: https://gist.github.com/username/gistid");
         return;
       }
-      const encoded = base64Encode(url);
+      const closer = `>`;
+      const embedUrl = `${url}.js`;
+      const embedCode = `<script src="${embedUrl}"></script${closer}`;
+      const encoded = base64Encode(embedCode);
       const resultUrl = `${window.location.origin}${window.location.pathname}?gist=${encoded}`;
       document.getElementById('output-url').value = resultUrl;
     }
@@ -55,13 +59,11 @@
     (function init() {
       const gistParam = getParam('gist');
       if (gistParam) {
-        const gistURL = base64Decode(gistParam);
-        if (gistURL && gistURL.startsWith("https://gist.github.com/") && gistURL.endsWith(".js")) {
-          const script = document.createElement('script');
-          script.src = gistURL;
-          document.getElementById('embed-output').appendChild(script);
+        const decoded = base64Decode(gistParam);
+        if (decoded) {
+          document.getElementById('embed-output').innerHTML = decoded;
         } else {
-          document.getElementById('embed-output').innerHTML = "<p style='color:red;'>Gagal decode atau link tidak valid.</p>";
+          document.getElementById('embed-output').innerHTML = "<p style='color:red;'>Gagal decode parameter gist.</p>";
         }
       } else {
         document.getElementById('form-ui').style.display = 'block';
